@@ -17,6 +17,7 @@
 #include <boost/random/mersenne_twister.hpp>
 #include <boost/random/uniform_int_distribution.hpp>
 
+
 using namespace std;
 using namespace boost;
 
@@ -41,7 +42,7 @@ static CBigNum bnProofOfStakeLimit(~uint256(0) >> 8);
 static CBigNum bnProofOfWorkLimitTestNet(~uint256(0) >> 0);
 static CBigNum bnProofOfStakeLimitTestNet(~uint256(0) >> 8);
 
-unsigned int nStakeMinAge = 60 * 60 * 4;	// minimum age for coin age: 2 hours
+unsigned int nStakeMinAge = 60 * 60 * 4;	    // minimum age for coin age: 2 hours
 unsigned int nStakeMaxAge = 60 * 60 * 24 * 4;	// stake age of full weight: 4 days
 unsigned int nStakeTargetSpacing = 60;			// 60 sec block spacing
 
@@ -1099,8 +1100,12 @@ int GetNumBlocksOfPeers()
 
 bool IsInitialBlockDownload()
 {
-    if (pindexBest == NULL || nBestHeight < Checkpoints::GetTotalBlocksEstimate())
+    bool isSyncing = false;
+    if (pindexBest == NULL || nBestHeight < Checkpoints::GetTotalBlocksEstimate()){
+        printf("Detected initial download via checkpoints estimate...\n");
         return true;
+    }
+    
     static int64 nLastUpdate;
     static CBlockIndex* pindexLastBest;
     if (pindexBest != pindexLastBest)
@@ -1108,8 +1113,14 @@ bool IsInitialBlockDownload()
         pindexLastBest = pindexBest;
         nLastUpdate = GetTime();
     }
-    return (GetTime() - nLastUpdate < 10 &&
-            pindexBest->GetBlockTime() < GetTime() - 24 * 60 * 60);
+    
+    
+    isSyncing = ( GetTime() - nLastUpdate < 10 && 
+                    pindexBest->GetBlockTime() < GetTime() - 24 * 60 * 60 ); 
+    //printf("IsInitialBlockDownload is %s\n", isSyncing ? "true":"false");
+    return isSyncing;
+    //return (GetTime() - nLastUpdate < 10 &&
+    //        pindexBest->GetBlockTime() < GetTime() - 24 * 60 * 60);
 }
 
 void static InvalidChainFound(CBlockIndex* pindexNew)
@@ -1810,7 +1821,7 @@ bool CBlock::SetBestChain(CTxDB& txdb, CBlockIndex* pindexNew)
         const CBlockLocator locator(pindexNew);
         ::SetBestChain(locator);
     }
-
+    
     // New best block
     hashBestChain = hash;
     pindexBest = pindexNew;
@@ -1819,11 +1830,11 @@ bool CBlock::SetBestChain(CTxDB& txdb, CBlockIndex* pindexNew)
     bnBestChainTrust = pindexNew->bnChainTrust;
     nTimeBestReceived = GetTime();
     nTransactionsUpdated++;
-    printf("SetBestChain: new best=%s  height=%d  trust=%s  date=%s\n",
-      hashBestChain.ToString().c_str(), nBestHeight, bnBestChainTrust.ToString().c_str(),
+    printf("SetBestChain: new best=%s  height=%d  init=%s trust=%s  date=%s\n",
+      hashBestChain.ToString().c_str(), nBestHeight, (fIsInitialDownload?"t":"f"), bnBestChainTrust.ToString().c_str(),
       DateTimeStrFormat("%x %H:%M:%S", pindexBest->GetBlockTime()).c_str());
-
-	printf("Stake checkpoint: %x\n", pindexBest->nStakeModifierChecksum);
+    printf("Stake checkpoint: %x\n", pindexBest->nStakeModifierChecksum);
+    //printf("Thread ID: %u\n",(unsigned int)pthread_self());
 
     // Check the version of the last 100 blocks to see if we need to upgrade:
     if (!fIsInitialDownload)
@@ -2514,7 +2525,7 @@ bool LoadBlockIndex(bool fAllowNew)
         bnProofOfWorkLimit = bnProofOfWorkLimitTestNet; // 0x0000ffff PoW base target is fixed in testnet
         nStakeMinAge = 20 * 60; // test net min age is 20 min
         nStakeMaxAge = 60 * 60; // test net max age is 60 min
-		nModifierInterval = 60; // test modifier interval is 2 minutes
+        nModifierInterval = 60; // test modifier interval is 2 minutes
         nCoinbaseMaturity = 10; // test maturity is 10 blocks
         nStakeTargetSpacing = 3 * 60; // test block spacing is 3 minutes
     }
@@ -2526,6 +2537,8 @@ bool LoadBlockIndex(bool fAllowNew)
     if (!txdb.LoadBlockIndex())
         return false;
     txdb.Close();
+    
+    printf("Txdb Index loaded successfully...\n");
 
     //
     // Init with genesis block
@@ -3064,14 +3077,17 @@ bool static ProcessMessage(CNode* pfrom, string strCommand, CDataStream& vRecv)
 
     else if (strCommand == "inv")
     {
+        //printf("Incoming inventory..( thread %u )\n",(unsigned int)pthread_self());
         vector<CInv> vInv;
         vRecv >> vInv;
         if (vInv.size() > MAX_INV_SZ)
         {
             pfrom->Misbehaving(20);
-            return error("message inv size() = %"PRIszu"", vInv.size());
+            return error("message inv size() = %"PRIszu"\n", vInv.size());
         }
-
+        if(fDebug)
+            printf("message inv size() = %"PRIszu"\n", vInv.size());
+            
         // find last block in inv vector
         unsigned int nLastBlock = (unsigned int)(-1);
         for (unsigned int nInv = 0; nInv < vInv.size(); nInv++) {
@@ -3092,20 +3108,29 @@ bool static ProcessMessage(CNode* pfrom, string strCommand, CDataStream& vRecv)
             bool fAlreadyHave = AlreadyHave(txdb, inv);
             if (fDebug)
                 printf("  got inventory: %s  %s\n", inv.ToString().c_str(), fAlreadyHave ? "have" : "new");
-
-            if (!fAlreadyHave)
-                pfrom->AskFor(inv);
-            else if (inv.type == MSG_BLOCK && mapOrphanBlocks.count(inv.hash)) {
-                pfrom->PushGetBlocks(pindexBest, GetOrphanRoot(mapOrphanBlocks[inv.hash]));
-            } else if (nInv == nLastBlock) {
-                // In case we are on a very long side-chain, it is possible that we already have
-                // the last block in an inv bundle sent in response to getblocks. Try to detect
-                // this situation and push another getblocks to continue.
-                pfrom->PushGetBlocks(mapBlockIndex[inv.hash], uint256(0));
-                if (fDebug)
-                    printf("force request: %s\n", inv.ToString().c_str());
+            
+            if( (inv.hash == uint256("00000000ab86e3efbdc06fc262b95a3faf6f4ba87ef9eab8c027342df1b24ef0")) && fAlreadyHave ) 
+            {
+                printf("Problem block.... attempting to move on!\n");
+                pfrom->PushGetBlocks(pindexBest, uint256(0));
             }
-
+            else
+            {
+                
+                if (!fAlreadyHave)
+                    pfrom->AskFor(inv);
+                else if (inv.type == MSG_BLOCK && mapOrphanBlocks.count(inv.hash)) {
+                    pfrom->PushGetBlocks(pindexBest, GetOrphanRoot(mapOrphanBlocks[inv.hash]));
+                } else if (nInv == nLastBlock) {
+                    // In case we are on a very long side-chain, it is possible that we already have
+                    // the last block in an inv bundle sent in response to getblocks. Try to detect
+                    // this situation and push another getblocks to continue.
+                    
+                    pfrom->PushGetBlocks(mapBlockIndex[inv.hash], uint256(0));
+                    if (fDebug)
+                        printf("force request: %s\n", inv.ToString().c_str());
+                }
+            }
             // Track requests for our stuff
             Inventory(inv.hash);
         }
@@ -3197,7 +3222,7 @@ bool static ProcessMessage(CNode* pfrom, string strCommand, CDataStream& vRecv)
         // Send the rest of the chain
         if (pindex)
             pindex = pindex->pnext;
-        int nLimit = 500;
+        int nLimit = 1000;
         printf("getblocks %d to %s limit %d\n", (pindex ? pindex->nHeight : -1), hashStop.ToString().substr(0,20).c_str(), nLimit);
         for (; pindex; pindex = pindex->pnext)
         {
@@ -3260,7 +3285,7 @@ bool static ProcessMessage(CNode* pfrom, string strCommand, CDataStream& vRecv)
         }
 
         vector<CBlock> vHeaders;
-        int nLimit = 2000;
+        int nLimit = 1000;
         printf("getheaders %d to %s\n", (pindex ? pindex->nHeight : -1), hashStop.ToString().substr(0,20).c_str());
         for (; pindex; pindex = pindex->pnext)
         {
@@ -4290,14 +4315,23 @@ void BitcoinMiner(CWallet *pwallet, bool fProofOfStake)
 
         while (vNodes.empty() || IsInitialBlockDownload() || pwallet->IsLocked())
         {
+            //if(fDebug){
+                if(vNodes.empty())
+                    printf("no vNodes...Miner going to sleep\n");
+                if(IsInitialBlockDownload())
+                    printf("Still downloading blockchain... Miner going to sleep\n");
+                if(pwallet->IsLocked())
+                    printf("Wallet locked...Miner going to sleep\n");
+            //}
             nLastCoinStakeSearchInterval = 0;
-            Sleep(1000);
+            Sleep(30000);
             if (fShutdown)
                 return;
             if (!fGenerateBitcoins && !fProofOfStake)
                 return;
         }
-
+        
+        //printf("Creating a block for mining...\n");
         //
         // Create new block
         //
@@ -4305,23 +4339,33 @@ void BitcoinMiner(CWallet *pwallet, bool fProofOfStake)
         CBlockIndex* pindexPrev = pindexBest;
 
         auto_ptr<CBlock> pblock(CreateNewBlock(pwallet, fProofOfStake));
-        if (!pblock.get())
+        if (!pblock.get()){
+            printf("pblock.get() failed.\n");
             return;
+        }
         IncrementExtraNonce(pblock.get(), pindexPrev, nExtraNonce);
-
+        
+        //printf("..1\n");
         if (fProofOfStake)
         {
             // ppcoin: if proof-of-stake block found then process block
+            if(fDebug)
+                pblock->print();
+            //printf("Proof of Stake? %s\n", pblock->IsProofOfStake()? "TRUE" : "FALSE");
             if (pblock->IsProofOfStake())
             {
-                if (!pblock->SignBlock(*pwalletMain))
+                //printf("...3\n");
+                if (!pblock->SignBlock(*pwalletMain)){
+                    printf("Couldn't sign block.\n"); 
                     continue;
+                }
                 printf("CPUMiner : proof-of-stake block found %s\n", pblock->GetHash().ToString().c_str()); 
                 SetThreadPriority(THREAD_PRIORITY_NORMAL);
                 CheckWork(pblock.get(), *pwalletMain, reservekey);
                 SetThreadPriority(THREAD_PRIORITY_LOWEST);
             }
             Sleep(500);
+            //printf("....4\n");
             continue;
         }
 

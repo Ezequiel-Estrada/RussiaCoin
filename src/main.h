@@ -532,6 +532,13 @@ public:
     bool IsCoinStake() const
     {
         // ppcoin: the coin stake transaction is marked with the first output empty
+        // if(fDebug){
+            // printf("IsCoinStake Test: (all need to be true to return yes.)\n");
+            // printf("vout[0].IsEmpty = %s \n",vout[0].IsEmpty() ? "true" : "false");
+            // printf("vout.size() > 1 = %s \n",vout.size() >= 2  ? "true" : "false");
+            // printf("!vin[0].prevout.IsNull() = %s \n", !vin[0].prevout.IsNull() ? "true" : "false");
+            // printf("vin.size > 0 = %s\n",vin.size() > 0 ? "true" : "false");
+        // }
         return (vin.size() > 0 && (!vin[0].prevout.IsNull()) && vout.size() >= 2 && vout[0].IsEmpty());
     }
 
@@ -945,6 +952,10 @@ public:
     // ppcoin: two types of block: proof-of-work or proof-of-stake
     bool IsProofOfStake() const
     {
+        //printf("IsProofOfStake():\n");
+        //printf("vtx.size() > 1 = %s\n",vtx.size() > 1 ? "true" : "false");
+        //printf("vtx[1].IsCoinStake() = %s\n", vtx[1].IsCoinStake() ? "true" : "false");
+        //printf("returning : %s\n",(vtx.size() > 1 && vtx[1].IsCoinStake()) ? "TRUE" : "FALSE");
         return (vtx.size() > 1 && vtx[1].IsCoinStake());
     }
 
@@ -1040,6 +1051,7 @@ public:
         fflush(fileout);
         if (!IsInitialBlockDownload() || (nBestHeight+1) % 500 == 0)
             FileCommit(fileout);
+
 
         return true;
     }

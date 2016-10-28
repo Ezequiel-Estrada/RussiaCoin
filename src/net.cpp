@@ -94,7 +94,7 @@ void CNode::PushGetBlocks(CBlockIndex* pindexBegin, uint256 hashEnd)
         return;
     pindexLastGetBlocksBegin = pindexBegin;
     hashLastGetBlocksEnd = hashEnd;
-
+    printf("Pushing getblocks (%d to %s ) [thread: %u]...\n",pindexBegin->nHeight, hashEnd.ToString().c_str(),(unsigned int)pthread_self());
     PushMessage("getblocks", CBlockLocator(pindexBegin), hashEnd);
 }
 
@@ -798,6 +798,7 @@ void ThreadSocketHandler2(void* parg)
             }
             FD_ZERO(&fdsetSend);
             FD_ZERO(&fdsetError);
+            printf("...sleep....\n");
             Sleep(timeout.tv_usec/1000);
         }
 
@@ -1110,6 +1111,7 @@ void ThreadMapPort2(void* parg)
                 else
                     printf("UPnP Port Mapping successful.\n");;
             }
+            printf("UPnP thread sleep 2000\n");
             Sleep(2000);
             i++;
         }
@@ -1154,7 +1156,7 @@ void MapPort()
 // The first name is used as information source for addrman.
 // The second name should resolve to a list of seed addresses.
 static const char *strDNSSeed[][2] = {
-    {"198.23.178.87", "198.23.178.87"},
+    {"194.135.89.60","194.135.89.60"},
 };
 
 void ThreadDNSAddressSeed(void* parg)
@@ -1245,7 +1247,8 @@ void ThreadDumpAddress2(void* parg)
     {
         DumpAddresses();
         vnThreadsRunning[THREAD_DUMPADDRESS]--;
-        Sleep(100000);
+        printf("Thread DumpAddress2 Sleeping, 30000...\n");
+        Sleep(30000);
         vnThreadsRunning[THREAD_DUMPADDRESS]++;
     }
     vnThreadsRunning[THREAD_DUMPADDRESS]--;
@@ -1485,6 +1488,7 @@ void ThreadOpenAddedConnections2(void* parg)
                 Sleep(500);
             }
             vnThreadsRunning[THREAD_ADDEDCONNECTIONS]--;
+            printf("Add Connections thread sleeping 2 minutes...\n");
             Sleep(120000); // Retry every 2 minutes
             vnThreadsRunning[THREAD_ADDEDCONNECTIONS]++;
         }
@@ -1533,6 +1537,7 @@ void ThreadOpenAddedConnections2(void* parg)
         if (fShutdown)
             return;
         vnThreadsRunning[THREAD_ADDEDCONNECTIONS]--;
+        printf("Sleeping for 2 minutes...\n");
         Sleep(120000); // Retry every 2 minutes
         vnThreadsRunning[THREAD_ADDEDCONNECTIONS]++;
         if (fShutdown)
