@@ -1,9 +1,10 @@
 
-Copyright (c) 2013-2014 RussiaCoin Developers
+Copyright (c) 2014-2018 RussiaCoinDotInfo ( http://www/RussiaCoin.Info/ )
 
 
-RussiaCoin 0.3.0 BETA
+RussiaCoin 1.2.0.1
 
+Copyright (c) 2014-2018 RussiaCoinDotInfo ( http://www/RussiaCoin.Info/ )
 Copyright (c) 2013-2014 RussiaCoin Developers
 Copyright (c) 2013 NovaCoin Developers
 Copyright (c) 2011-2012 Bitcoin Developers
@@ -26,7 +27,7 @@ Setup
 After completing windows setup then run windows command line (cmd)
   cd daemon
   russiacoind
-You would need to create a configuration file russiacoin.conf in the default
+You would need to create a configuration file russiacoin.conf ( *addnode=76.74.177.199*) in the default
 wallet directory. Grant access to russiacoind.exe in anti-virus and firewall
 applications if necessary.
 
@@ -47,6 +48,7 @@ Start up the new russiacoind.
 
 
 See the documentation/wiki at the RussiaCoin site:
-  http://russiacoin.cc/
+  http://www.RussiaCoin.Info/
+  https://github.com/RussiaCoinDotInfo/RussiaCoin
 for help and more information.
 
