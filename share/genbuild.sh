@@ -17,10 +17,10 @@ if [ -e "$(which git)" ]; then
 
     # get a string like "v0.6.0-66-g59887e8-dirty"
     #DESC="$(git describe --dirty 2>/dev/null)"
-    DESC="v1.0.0.1-bliat"
+    DESC="v1.2.0.1"
     # get a string like "2012-04-10 16:27:19 +0200"
     #TIME="$(git log -n 1 --format="%ci")"
-    TIME="2014-06-1 04:27:03 +0400"
+    TIME="2017-07-4 12:34:56 +0300"
 fi
 
 if [ -n "$DESC" ]; then
