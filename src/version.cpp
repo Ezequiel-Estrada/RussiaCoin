@@ -11,7 +11,7 @@
 const std::string CLIENT_NAME("Россия");
 
 // Client version number
-#define CLIENT_VERSION_SUFFIX   "-дорогая"
+#define CLIENT_VERSION_SUFFIX   "-богатство"
 
 
 // The following part of the code determines the CLIENT_BUILD variable.
