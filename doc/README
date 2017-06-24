@@ -34,7 +34,7 @@ or forward port 12788 (TCP) to your computer so you can receive
 incoming connections.  RussiaCoin works without incoming connections,
 but allowing incoming connections helps the RussiaCoin network.
 
-You would need to create a configuration file russiacoin.conf ( *addnode=76.74.177.199*) in the default
+You would need to create a configuration file russiacoin.conf ( *addnode=76.74.177.199* ) in the default
 wallet directory. Grant access to russiacoind.exe in anti-virus and firewall
 applications if necessary.
 
