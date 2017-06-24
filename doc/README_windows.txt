@@ -27,7 +27,7 @@ Setup
 After completing windows setup then run windows command line (cmd)
   cd daemon
   russiacoind
-You would need to create a configuration file russiacoin.conf ( *addnode=76.74.177.199*) in the default
+You would need to create a configuration file russiacoin.conf ( *addnode=76.74.177.199* ) in the default
 wallet directory. Grant access to russiacoind.exe in anti-virus and firewall
 applications if necessary.
 
