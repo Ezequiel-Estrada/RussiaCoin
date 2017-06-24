@@ -92,9 +92,10 @@
        </property>
        <property name="text">
         <string>
-Copyright © 2009-2012 Bitcoin Developers
-Copyright © 2012 PPCoin Developers
+Copyright © 2014-2018 RussiaCoinDotInfo ( http://www/RussiaCoin.Info/ )
 Copyright © 2014 RussiaCoin Developers
+Copyright © 2012 PPCoin Developers
+Copyright © 2009-2012 Bitcoin Developers
 </string>
        </property>
        <property name="textInteractionFlags">
