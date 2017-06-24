@@ -22,7 +22,7 @@ Version 1.2 was released on GitHub on the 12th of June 2017 while the website is
 Basically, because of the initial whales at launch there were multiple forks that occurred resulting in some issues with the block chain failing at various points eg 21,181 etc. The chain still downloads, but through a convoluted series of coding issues, *all* the various forks were downloaded.
 
 This release fixes those issues.
-Website: http://www.russiacoin.info/
+Website: Copyright (c) 2014-2018 RussiaCoinDotInfo ( http://www/RussiaCoin.Info/ )
 
 Was hoping to launch the website on the first of July 2017, however, I have pushed through a partial update of the website.
 
